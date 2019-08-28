@@ -90,7 +90,7 @@ async def answer_call(request):
         "action": "conversation",
         "name": conversation_uuid,
         "eventMethod": "POST",
-        "musicOnHoldUrl": [random.choice(MUSIC_WHILE_YOU_WAIT)],
+        "musicOnHoldUrl": random.choice(MUSIC_WHILE_YOU_WAIT),
         "endOnExit": False,
         "startOnEnter": False,
     }
@@ -195,7 +195,7 @@ async def inbound_sms(request):
                 # Send from the number the received this message.
                 "from": hotline_number,
                 "to": phone_number_dict["phone"],
-                "text": f"{from_number}: {message}"[:140],
+                "text": f"{from_number}: {message}",
             }
         )
 
