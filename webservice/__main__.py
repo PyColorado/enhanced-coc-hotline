@@ -89,13 +89,13 @@ async def answer_call(request):
     conversation_ncco = {
         "action": "conversation",
         "name": conversation_uuid,
-        "eventMethod": "POST",
+        # "eventMethod": "POST",
         "musicOnHoldUrl": [random.choice(MUSIC_WHILE_YOU_WAIT)],
         "endOnExit": False,
         "startOnEnter": False,
     }
 
-    print(conversation_uuid)
+    # print(conversation_uuid)
 
     if is_auto_recording():
         greeting = f"{greeting} This call is recorded."
@@ -114,7 +114,7 @@ async def answer_call(request):
     phone_numbers = get_phone_numbers()
 
     for phone_number_dict in phone_numbers:
-        print(phone_number_dict)
+        # print(phone_number_dict)
         client.create_call(
             {
                 "to": [{"type": "phone", "number": phone_number_dict["phone"]}],
