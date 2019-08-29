@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import time
 
 import nexmo
 from aiohttp import web
@@ -68,6 +69,11 @@ def is_auto_recording():
     return autorecord_flag.lower() == "true"
 
 
+def include_jwt():
+    include_jwt_flag = os.environ.get("INCLUDE_JWT", "false")
+    return include_jwt_flag.lower() == "true"
+
+
 @routes.get("/webhook/answer/")
 async def answer_call(request):
     """Webhook event for answering incoming call to the hotline.
@@ -111,6 +117,23 @@ async def answer_call(request):
     ncco = [{"action": "talk", "text": greeting}, conversation_ncco]
 
     client = get_nexmo_client()
+
+    if include_jwt():
+        # Set the JWT to expire after 15 minutes - should be long enough for any zapier processing.
+        client.auth(exp=time.time() + (15 * 60))
+
+        ncco.append({
+            "action": "notify",
+            "payload": {
+                "jwt": client.generate_application_jwt().decode()
+            },
+            "eventUrl": [
+                os.environ.get("ZAPIER_CATCH_HOOK_RECORDING_FINISHED_URL")
+            ],
+            "eventMethod": "POST"
+        })
+
+
     phone_numbers = get_phone_numbers()
 
     for phone_number_dict in phone_numbers:
