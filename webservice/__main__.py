@@ -69,11 +69,6 @@ def is_auto_recording():
     return autorecord_flag.lower() == "true"
 
 
-def include_jwt():
-    include_jwt_flag = os.environ.get("INCLUDE_JWT", "false")
-    return include_jwt_flag.lower() == "true"
-
-
 @routes.get("/webhook/answer/")
 async def answer_call(request):
     """Webhook event for answering incoming call to the hotline.
@@ -117,23 +112,6 @@ async def answer_call(request):
     ncco = [{"action": "talk", "text": greeting}, conversation_ncco]
 
     client = get_nexmo_client()
-
-    if include_jwt():
-        # Set the JWT to expire after 15 minutes - should be long enough for any zapier processing.
-        client.auth(exp=time.time() + (15 * 60))
-
-        ncco.append({
-            "action": "notify",
-            "payload": {
-                "jwt": client.generate_application_jwt().decode()
-            },
-            "eventUrl": [
-                os.environ.get("ZAPIER_CATCH_HOOK_RECORDING_FINISHED_URL")
-            ],
-            "eventMethod": "POST"
-        })
-
-
     phone_numbers = get_phone_numbers()
 
     for phone_number_dict in phone_numbers:
@@ -235,6 +213,32 @@ async def inbound_sms(request):
     )
 
     return web.Response(status=204)
+
+
+@routes.get("/recordings/")
+async def proxy_recording(request):
+    """Endpoint for proxying Nexmo recording downloads.
+
+    This can be used in Zapier to upload recordings to Google Drive
+
+    api_key and api_secret must be provided as GET parameters so we can authenticate
+    this request.
+    """
+    recording_url = request.rel_url.query["recording_url"]
+
+    api_key = os.environ.get("NEXMO_API_KEY")
+    api_secret = os.environ.get("NEXMO_API_SECRET")
+
+    incoming_api_key = request.rel_url.query["api_key"]
+    incoming_api_secret = request.rel_url.query["api_secret"]
+
+    if api_key != incoming_api_key or api_secret != incoming_api_secret:
+        return web.Response(status=401)
+
+    client = get_nexmo_client()
+    return web.Response(
+        body=client.get_recording(recording_url), content_type="audio/mpeg"
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover
