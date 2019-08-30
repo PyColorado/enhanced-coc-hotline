@@ -123,6 +123,7 @@ async def answer_call(request):
                 "answer_url": [
                     f"http://{request.host}/webhook/answer_conference_call/{conversation_uuid}/{call_uuid}/"
                 ],
+                "machine_detection": "hangup",
             }
         )
 
